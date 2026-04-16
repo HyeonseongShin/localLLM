@@ -1,7 +1,7 @@
 # Local LLM
 
-A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI.
-Run AI conversations entirely offline without any internet connection.
+A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI + SearXNG.
+Run AI conversations entirely on your own machine, with optional web search via SearXNG.
 
 ## Stack
 
@@ -10,6 +10,7 @@ Run AI conversations entirely offline without any internet connection.
 | Ollama | LLM runtime and model management | 11434 |
 | Gemma3 | Google open-source LLM model | - |
 | Open WebUI | ChatGPT-style web interface | 3000 |
+| SearXNG | Self-hosted web search engine (used by Open WebUI) | 8088 |
 
 ## Getting Started
 
@@ -45,7 +46,8 @@ Run AI conversations entirely offline without any internet connection.
 Once the service is running, open your browser at:
 
 ```
-http://localhost:3000
+http://localhost:3000   — Open WebUI
+http://localhost:8088   — SearXNG (optional, direct access)
 ```
 
 On first visit, create a local account (no external server connection).
@@ -56,14 +58,51 @@ Then select `gemma3:4b` from the model picker to start chatting.
 All settings are stored in `.env`. It is created automatically on first run from `.env.example`.
 
 ```bash
-# .env
+# .env (key variables)
 OLLAMA_PORT=11434
 OLLAMA_URL=http://localhost:11434
+SEARXNG_PORT=8088
 WEBUI_PORT=3000
+WEBUI_NAME="Local AI"
 DEFAULT_MODEL=gemma3:4b
 ```
 
 Both `docker-compose.yml` and the shell scripts read from this file, so changing a value here applies everywhere.
+
+### Open WebUI settings
+
+The following variables are injected into Open WebUI at startup:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WEBUI_NAME` | `Local AI` | Title shown in the browser tab and header |
+| `WEBUI_AUTH` | `true` | Enable login (set `false` to skip login) |
+| `ENABLE_SIGNUP` | `true` | Allow new account registration |
+| `DEFAULT_USER_ROLE` | `user` | Role assigned to new users |
+| `ENABLE_MESSAGE_RATING` | `true` | Show thumbs up/down on responses |
+| `ENABLE_COMMUNITY_SHARING` | `false` | Disable sharing to Open WebUI community |
+| `ENABLE_RAG_WEB_SEARCH` | `true` | Enable web search feature |
+
+## Web Search (SearXNG)
+
+Open WebUI uses SearXNG as its web search backend. SearXNG runs as a local container — no external search API key is needed.
+
+**How it works:**
+
+```
+Open WebUI → searxng:8080 (internal Docker network) → external search engines
+```
+
+**Enable web search in a chat:**
+
+Click the globe icon (🌐) in the chat input bar to toggle web search for that conversation.
+
+**SearXNG configuration** is stored in `searxng/settings.yml` (bind-mounted into the container). The file is version-controlled, so changes persist across `./stop.sh` / `./start.sh` cycles.
+
+> For production use, replace `secret_key` in `searxng/settings.yml` with a random string:
+> ```bash
+> python3 -c "import secrets; print(secrets.token_hex(32))"
+> ```
 
 ## CLI Query Tool
 
@@ -145,6 +184,8 @@ Prompts you to choose what to delete:
 2) Models only      (downloaded Ollama models)
 3) Everything       (WebUI + models)
 ```
+
+> SearXNG has no persistent volume — its config lives in `searxng/settings.yml` and is not affected by reset.
 
 ### Inspect volumes
 
