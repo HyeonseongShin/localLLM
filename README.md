@@ -27,11 +27,18 @@ Run AI conversations entirely offline without any internet connection.
 ./start.sh --gpu
 ```
 
-The script automatically:
-1. Starts Docker containers (with or without GPU)
-2. Waits for Ollama to be ready
-3. Downloads the Gemma3 model on first run (~2–3 GB)
-4. Prints the access URL
+`start.sh` automatically:
+1. Creates `.env` from `.env.example` if it does not exist
+2. Starts Docker containers (with or without GPU)
+3. Waits for Ollama to be ready
+4. Downloads the Gemma3 model on first run (~2–3 GB)
+5. Prints the access URL
+
+### Stop
+
+```bash
+./stop.sh
+```
 
 ### Access
 
@@ -44,16 +51,19 @@ http://localhost:3000
 On first visit, create a local account (no external server connection).
 Then select `gemma3:4b` from the model picker to start chatting.
 
-## Model Options
+## Configuration
 
-| Model | RAM Required | Notes |
-|-------|-------------|-------|
-| `gemma3:2b` | 4 GB+ | Fast, good for simple conversations |
-| `gemma3:4b` | 8 GB+ | Balanced — default |
-| `gemma3:12b` | 16 GB+ | Higher quality |
-| `gemma3:27b` | 32 GB+ | Best quality |
+All settings are stored in `.env`. It is created automatically on first run from `.env.example`.
 
-To change the default model, edit the `MODEL` variable in `start.sh`.
+```bash
+# .env
+OLLAMA_PORT=11434
+OLLAMA_URL=http://localhost:11434
+WEBUI_PORT=3000
+DEFAULT_MODEL=gemma3:4b
+```
+
+Both `docker-compose.yml` and the shell scripts read from this file, so changing a value here applies everywhere.
 
 ## CLI Query Tool
 
@@ -79,8 +89,6 @@ cat error.log | ./ask.sh -p "What is wrong here?"
 ./ask.sh --no-stream -p "Give me a detailed explanation of DNS"
 ```
 
-All options:
-
 | Option | Description |
 |--------|-------------|
 | `-p` | Prompt to send (required) |
@@ -89,13 +97,57 @@ All options:
 | `-f` | Attach a file as context |
 | `--no-stream` | Print full response at once instead of streaming |
 
+## Model Options
+
+| Model | RAM Required | Notes |
+|-------|-------------|-------|
+| `gemma3:2b` | 4 GB+ | Fast, good for simple conversations |
+| `gemma3:4b` | 8 GB+ | Balanced — default |
+| `gemma3:12b` | 16 GB+ | Higher quality |
+| `gemma3:27b` | 32 GB+ | Best quality |
+
+To change the default model, update `DEFAULT_MODEL` in `.env`.
+
+## Data Management
+
+### Reset data
+
+```bash
+./reset_data.sh
+```
+
+Prompts you to choose what to delete:
+
+```
+1) Open WebUI only  (accounts, chat history)
+2) Models only      (downloaded Ollama models)
+3) Everything       (WebUI + models)
+```
+
+### Inspect volumes
+
+```bash
+# List volumes
+docker volume ls
+
+# Browse Ollama model files
+docker exec -it ollama sh
+ls /root/.ollama/models
+
+# Browse Open WebUI data
+docker exec -it open-webui sh
+ls /app/backend/data
+
+# Inspect a volume without running containers
+docker run --rm -v locallm_ollama_data:/data alpine ls /data
+
+# List installed models
+docker exec ollama ollama list
+```
+
 ## Manual Commands
 
 ```bash
-# Start / stop services
-docker compose up -d
-docker compose down
-
 # Follow logs
 docker compose logs -f
 
@@ -104,9 +156,6 @@ docker exec ollama ollama pull gemma3:12b
 
 # Chat via CLI
 docker exec -it ollama ollama run gemma3:4b
-
-# List installed models
-docker exec ollama ollama list
 ```
 
 ## GPU Acceleration (NVIDIA)
