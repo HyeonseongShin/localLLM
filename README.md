@@ -108,6 +108,28 @@ cat error.log | ./ask.sh -p "What is wrong here?"
 
 To change the default model, update `DEFAULT_MODEL` in `.env`.
 
+### Adding More Models
+
+Pull any additional model while Ollama is running:
+
+```bash
+docker exec ollama ollama pull qwen2.5:7b
+docker exec ollama ollama pull llama3.2:3b
+```
+
+Newly downloaded models appear automatically in the Open WebUI model picker — no restart needed.
+
+### Using Multiple Models Simultaneously
+
+Open WebUI supports side-by-side comparison. In a chat, click the model name at the top and press `+` to add a second model. The same prompt is sent to both and responses are shown in parallel.
+
+Recommended two-model combination for 32 GB RAM:
+
+| Model | Strength |
+|-------|----------|
+| `gemma3:4b` | General conversation |
+| `qwen2.5:7b` | Korean language, coding |
+
 ## Data Management
 
 ### Reset data
