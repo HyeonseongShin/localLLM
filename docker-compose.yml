@@ -1,4 +1,15 @@
 services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    ports:
+      - "${SEARXNG_PORT:-8088}:8080"
+    volumes:
+      - ./searxng:/etc/searxng:rw
+    environment:
+      - SEARXNG_BASE_URL=http://localhost:${SEARXNG_PORT:-8088}
+
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -34,10 +45,15 @@ services:
       - ENABLE_COMMUNITY_SHARING=${ENABLE_COMMUNITY_SHARING:-false}
       - ENABLE_RAG_WEB_SEARCH=${ENABLE_RAG_WEB_SEARCH:-true}
 
+      # Web search engine (SearXNG on internal Docker network)
+      - RAG_WEB_SEARCH_ENGINE=searxng
+      - SEARXNG_QUERY_URL=http://searxng:8080/search?q=<query>&format=json
+
       # Models
       - DEFAULT_MODELS=${DEFAULT_MODEL:-gemma3:4b}
     depends_on:
       - ollama
+      - searxng
 
 volumes:
   ollama_data:

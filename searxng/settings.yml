@@ -1,0 +1,17 @@
+# SearXNG configuration for local use with Open WebUI
+# Full reference: https://docs.searxng.org/admin/settings/index.html
+
+use_default_settings: true
+
+server:
+  # Replace with a random string for production use:
+  #   python3 -c "import secrets; print(secrets.token_hex(32))"
+  secret_key: "change-me-to-a-random-string"
+  limiter: false      # Disable rate limiting — local use only
+  image_proxy: false
+
+search:
+  # JSON format must be enabled for Open WebUI integration
+  formats:
+    - html
+    - json
