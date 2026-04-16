@@ -2,9 +2,27 @@
 
 set -e
 
-MODEL="gemma3:4b"
-OLLAMA_URL="http://localhost:11434"
-WEBUI_URL="http://localhost:3000"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Create .env from .env.example if it doesn't exist
+if [ ! -f "${SCRIPT_DIR}/.env" ]; then
+  echo "[INFO] .env not found. Creating from .env.example..."
+  cp "${SCRIPT_DIR}/.env.example" "${SCRIPT_DIR}/.env"
+  echo "       Created .env with default values. Edit it to customize."
+  echo ""
+fi
+
+# Load config from .env
+set -o allexport
+source "${SCRIPT_DIR}/.env"
+set +o allexport
+
+# Apply defaults if not set in .env
+OLLAMA_PORT="${OLLAMA_PORT:-11434}"
+WEBUI_PORT="${WEBUI_PORT:-3000}"
+DEFAULT_MODEL="${DEFAULT_MODEL:-gemma3:4b}"
+OLLAMA_URL="${OLLAMA_URL:-http://localhost:${OLLAMA_PORT}}"
+WEBUI_URL="http://localhost:${WEBUI_PORT}"
 GPU=false
 
 # Parse arguments
@@ -17,7 +35,7 @@ done
 
 echo "=== Local LLM Start ==="
 echo "  GPU mode : ${GPU}"
-echo "  Model    : ${MODEL}"
+echo "  Model    : ${DEFAULT_MODEL}"
 echo ""
 
 # Check Docker is running
@@ -41,12 +59,12 @@ until curl -s "${OLLAMA_URL}" > /dev/null 2>&1; do
 done
 
 # Check and download model
-echo "[3/3] Checking model: ${MODEL}"
-if docker exec ollama ollama list | grep -q "${MODEL%:*}"; then
+echo "[3/3] Checking model: ${DEFAULT_MODEL}"
+if docker exec ollama ollama list | grep -q "${DEFAULT_MODEL%:*}"; then
   echo "      Already installed."
 else
   echo "      Downloading (~2-3 GB, please wait)..."
-  docker exec ollama ollama pull "${MODEL}"
+  docker exec ollama ollama pull "${DEFAULT_MODEL}"
 fi
 
 echo ""

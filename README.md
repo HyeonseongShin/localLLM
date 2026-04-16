@@ -55,6 +55,40 @@ Then select `gemma3:4b` from the model picker to start chatting.
 
 To change the default model, edit the `MODEL` variable in `start.sh`.
 
+## CLI Query Tool
+
+Query Ollama directly from the terminal with `ask.sh`.
+
+```bash
+# Basic question
+./ask.sh -p "Explain Docker volumes in one sentence"
+
+# Choose a different model
+./ask.sh -m gemma3:12b -p "Write a Python quicksort"
+
+# Set a system prompt
+./ask.sh -s "You are a Linux expert" -p "Best practice for secret management?"
+
+# Attach a file as context
+./ask.sh -f docker-compose.yml -p "What does this do?"
+
+# Pipe content as context
+cat error.log | ./ask.sh -p "What is wrong here?"
+
+# Get the full response at once (no streaming)
+./ask.sh --no-stream -p "Give me a detailed explanation of DNS"
+```
+
+All options:
+
+| Option | Description |
+|--------|-------------|
+| `-p` | Prompt to send (required) |
+| `-m` | Model to use (default: `gemma3:4b`) |
+| `-s` | System prompt |
+| `-f` | Attach a file as context |
+| `--no-stream` | Print full response at once instead of streaming |
+
 ## Manual Commands
 
 ```bash

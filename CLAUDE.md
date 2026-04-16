@@ -51,6 +51,22 @@ and merged at runtime only when the flag is provided.
 ./start.sh --gpu    # With NVIDIA GPU
 ```
 
+## CLI Query Tool
+
+`ask.sh` wraps `scripts/ask.py` and queries Ollama from the terminal.
+
+```bash
+./ask.sh -p "Your question"
+./ask.sh -m gemma3:12b -p "Question"
+./ask.sh -s "System prompt" -p "Question"
+./ask.sh -f some_file.py -p "What does this do?"
+cat file | ./ask.sh -p "Question about this content"
+./ask.sh --no-stream -p "Question"
+```
+
+Core logic lives in `scripts/ask.py`. `ask.sh` is a thin wrapper that resolves
+the script path and forwards all arguments to Python.
+
 ## Architecture
 
 ```
