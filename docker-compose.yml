@@ -17,7 +17,25 @@ services:
     volumes:
       - open_webui_data:/app/backend/data
     environment:
+      # Ollama connection (internal Docker network — do not change)
       - OLLAMA_BASE_URL=http://ollama:11434
+
+      # UI
+      - WEBUI_NAME=${WEBUI_NAME:-Local AI}
+      - WEBUI_URL=${WEBUI_URL:-http://localhost:3000}
+
+      # Auth
+      - WEBUI_AUTH=${WEBUI_AUTH:-true}
+      - ENABLE_SIGNUP=${ENABLE_SIGNUP:-true}
+      - DEFAULT_USER_ROLE=${DEFAULT_USER_ROLE:-user}
+
+      # Features
+      - ENABLE_MESSAGE_RATING=${ENABLE_MESSAGE_RATING:-true}
+      - ENABLE_COMMUNITY_SHARING=${ENABLE_COMMUNITY_SHARING:-false}
+      - ENABLE_RAG_WEB_SEARCH=${ENABLE_RAG_WEB_SEARCH:-true}
+
+      # Models
+      - DEFAULT_MODELS=${DEFAULT_MODEL:-gemma3:4b}
     depends_on:
       - ollama
 
