@@ -51,7 +51,8 @@ All Docker images are pinned to specific versions to prevent unexpected breakage
 ### Stop
 
 ```bash
-./stop.sh
+./stop.sh           # Stop containers (network preserved, fast restart)
+./stop.sh --down    # Remove containers and network (use after config changes)
 ```
 
 ### Access
@@ -86,6 +87,8 @@ QDRANT_COLLECTION=documents
 ```
 
 Both `docker-compose.yml` and the shell scripts read from this file.
+
+All services run on a dedicated Docker bridge network (`localllm`), isolated from other containers on the host.
 
 ### Open WebUI settings
 

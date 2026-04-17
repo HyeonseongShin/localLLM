@@ -7,6 +7,8 @@ services:
       - "${QDRANT_PORT:-6333}:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+    networks:
+      - localllm
 
   rag-api:
     build: ./rag-api
@@ -25,6 +27,8 @@ services:
     depends_on:
       - ollama
       - qdrant
+    networks:
+      - localllm
 
   searxng:
     image: searxng/searxng:2026.4.16-ae0b0e56a
@@ -36,6 +40,8 @@ services:
       - ./searxng:/etc/searxng:rw
     environment:
       - SEARXNG_BASE_URL=http://localhost:${SEARXNG_PORT:-8088}
+    networks:
+      - localllm
 
   ollama:
     image: ollama/ollama:0.20.7
@@ -45,6 +51,8 @@ services:
       - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama_data:/root/.ollama
+    networks:
+      - localllm
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:v0.8.12
@@ -86,8 +94,14 @@ services:
       - ollama
       - searxng
       - rag-api
+    networks:
+      - localllm
 
 volumes:
   ollama_data:
   open_webui_data:
   qdrant_data:
+
+networks:
+  localllm:
+    driver: bridge

@@ -21,7 +21,8 @@ A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI + SearXNG
 ```bash
 ./start.sh          # Start (CPU)
 ./start.sh --gpu    # Start with NVIDIA GPU
-./stop.sh           # Stop all containers
+./stop.sh           # Stop containers (network preserved, fast restart)
+./stop.sh --down    # Remove containers and network (use after config changes)
 ./reset_data.sh     # Interactively delete volume data
 ```
 
@@ -81,6 +82,7 @@ Browser → Open WebUI (3000) → Ollama API (11434) → Gemma3 model
                                 vector search   LLM answer
 ```
 
+- All services share a dedicated bridge network named `localllm`, isolated from other Docker containers on the host
 - Open WebUI ↔ Ollama: internal Docker network via `OLLAMA_BASE_URL=http://ollama:11434`
 - Open WebUI ↔ SearXNG: internal Docker network via `SEARXNG_QUERY_URL=http://searxng:8080/...`
 - Open WebUI ↔ RAG API: internal Docker network via `http://rag-api:8000/v1` (OpenAI-compatible)
