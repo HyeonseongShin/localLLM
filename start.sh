@@ -21,6 +21,7 @@ set +o allexport
 OLLAMA_PORT="${OLLAMA_PORT:-11434}"
 WEBUI_PORT="${WEBUI_PORT:-3000}"
 DEFAULT_MODEL="${DEFAULT_MODEL:-gemma3:4b}"
+EMBED_MODEL="${EMBED_MODEL:-nomic-embed-text}"
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:${OLLAMA_PORT}}"
 WEBUI_URL="http://localhost:${WEBUI_PORT}"
 GPU=false
@@ -34,8 +35,9 @@ for arg in "$@"; do
 done
 
 echo "=== Local LLM Start ==="
-echo "  GPU mode : ${GPU}"
-echo "  Model    : ${DEFAULT_MODEL}"
+echo "  GPU mode    : ${GPU}"
+echo "  LLM model   : ${DEFAULT_MODEL}"
+echo "  Embed model : ${EMBED_MODEL}"
 echo ""
 
 # Check Docker is running
@@ -58,13 +60,21 @@ until curl -s "${OLLAMA_URL}" > /dev/null 2>&1; do
   sleep 2
 done
 
-# Check and download model
-echo "[3/3] Checking model: ${DEFAULT_MODEL}"
+# Check and download models
+echo "[3/3] Checking models..."
+
 if docker exec ollama ollama list | grep -q "${DEFAULT_MODEL%:*}"; then
-  echo "      Already installed."
+  echo "      ${DEFAULT_MODEL}: already installed."
 else
-  echo "      Downloading (~2-3 GB, please wait)..."
+  echo "      Downloading ${DEFAULT_MODEL} (~2-3 GB, please wait)..."
   docker exec ollama ollama pull "${DEFAULT_MODEL}"
+fi
+
+if docker exec ollama ollama list | grep -q "${EMBED_MODEL%:*}"; then
+  echo "      ${EMBED_MODEL}: already installed."
+else
+  echo "      Downloading ${EMBED_MODEL} (~300 MB, please wait)..."
+  docker exec ollama ollama pull "${EMBED_MODEL}"
 fi
 
 echo ""

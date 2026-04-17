@@ -1,7 +1,7 @@
 # Local LLM
 
-A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI + SearXNG.
-Run AI conversations entirely on your own machine, with optional web search via SearXNG.
+A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI + SearXNG + RAG.
+Run AI conversations entirely on your own machine, with optional web search and document Q&A via RAG.
 
 ## Stack
 
@@ -11,6 +11,19 @@ Run AI conversations entirely on your own machine, with optional web search via 
 | Gemma3 | Google open-source LLM model | - |
 | Open WebUI | ChatGPT-style web interface | 3000 |
 | SearXNG | Self-hosted web search engine (used by Open WebUI) | 8088 |
+| Qdrant | Vector database for RAG | 6333 |
+| RAG API | FastAPI + LangServe RAG server (OpenAI-compatible) | 8000 |
+
+## Image Versions
+
+All Docker images are pinned to specific versions to prevent unexpected breakage on updates.
+
+| Image | Version |
+|-------|---------|
+| `qdrant/qdrant` | `v1.17.1` |
+| `searxng/searxng` | `2026.4.16-ae0b0e56a` |
+| `ollama/ollama` | `0.20.7` |
+| `ghcr.io/open-webui/open-webui` | `v0.8.12` |
 
 ## Getting Started
 
@@ -30,9 +43,9 @@ Run AI conversations entirely on your own machine, with optional web search via 
 
 `start.sh` automatically:
 1. Creates `.env` from `.env.example` if it does not exist
-2. Starts Docker containers (with or without GPU)
+2. Starts all Docker containers
 3. Waits for Ollama to be ready
-4. Downloads the Gemma3 model on first run (~2–3 GB)
+4. Downloads `gemma3:4b` (LLM) and `nomic-embed-text` (embedding) on first run
 5. Prints the access URL
 
 ### Stop
@@ -43,14 +56,15 @@ Run AI conversations entirely on your own machine, with optional web search via 
 
 ### Access
 
-Once the service is running, open your browser at:
+| Service | URL |
+|---------|-----|
+| Open WebUI | http://localhost:3000 |
+| RAG API | http://localhost:8000 |
+| RAG Playground | http://localhost:8000/rag/playground |
+| SearXNG | http://localhost:8088 |
+| Qdrant Dashboard | http://localhost:6333/dashboard |
 
-```
-http://localhost:3000   — Open WebUI
-http://localhost:8088   — SearXNG (optional, direct access)
-```
-
-On first visit, create a local account (no external server connection).
+On first visit to Open WebUI, create a local account (no external server connection).
 Then select `gemma3:4b` from the model picker to start chatting.
 
 ## Configuration
@@ -65,13 +79,15 @@ SEARXNG_PORT=8088
 WEBUI_PORT=3000
 WEBUI_NAME="Local AI"
 DEFAULT_MODEL=gemma3:4b
+EMBED_MODEL=nomic-embed-text
+QDRANT_PORT=6333
+RAG_API_PORT=8000
+QDRANT_COLLECTION=documents
 ```
 
-Both `docker-compose.yml` and the shell scripts read from this file, so changing a value here applies everywhere.
+Both `docker-compose.yml` and the shell scripts read from this file.
 
 ### Open WebUI settings
-
-The following variables are injected into Open WebUI at startup:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -82,6 +98,49 @@ The following variables are injected into Open WebUI at startup:
 | `ENABLE_MESSAGE_RATING` | `true` | Show thumbs up/down on responses |
 | `ENABLE_COMMUNITY_SHARING` | `false` | Disable sharing to Open WebUI community |
 | `ENABLE_RAG_WEB_SEARCH` | `true` | Enable web search feature |
+
+## RAG (Document Q&A)
+
+Query your own documents using Retrieval-Augmented Generation.
+
+### How it works
+
+```
+docs/*.pdf → ingest.py → nomic-embed-text → Qdrant (vectors)
+
+Question → RAG API → Qdrant (similarity search) → gemma3:4b → Answer
+```
+
+### Index documents
+
+Place PDF files in the `docs/` folder and run:
+
+```bash
+cp ~/some_document.pdf docs/
+./index.sh
+```
+
+`index.sh` indexes all `*.pdf` files in `docs/` at once. Already-indexed files can be re-run safely (documents are appended to the collection).
+
+### Use RAG in Open WebUI
+
+The `rag` model is registered in Open WebUI **automatically at startup** — no manual configuration needed. Just select `rag` from the model picker and start chatting with your documents.
+
+> **Note:** `nomic-embed-text` also appears in the model list but is embedding-only — selecting it for chat will cause an error. Use `gemma3:4b` for general chat and `rag` for document Q&A.
+
+> If a `https://api.openai.com/v1` entry appears in Settings → Connections with an error, remove or disable it — it is the default OpenAI placeholder and has no valid API key.
+
+### RAG API endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET  /rag/playground` | Browser-based test UI (LangServe) |
+| `POST /rag/invoke` | Single invocation |
+| `POST /rag/stream` | Streaming response |
+| `GET  /v1/models` | OpenAI-compatible model list |
+| `POST /v1/chat/completions` | OpenAI-compatible chat endpoint |
+
+> The system works with an empty `docs/` — it simply answers "I don't know" until documents are indexed.
 
 ## Web Search (SearXNG)
 
@@ -162,13 +221,6 @@ Newly downloaded models appear automatically in the Open WebUI model picker — 
 
 Open WebUI supports side-by-side comparison. In a chat, click the model name at the top and press `+` to add a second model. The same prompt is sent to both and responses are shown in parallel.
 
-Recommended two-model combination for 32 GB RAM:
-
-| Model | Strength |
-|-------|----------|
-| `gemma3:4b` | General conversation |
-| `qwen2.5:7b` | Korean language, coding |
-
 ## Data Management
 
 ### Reset data
@@ -182,10 +234,12 @@ Prompts you to choose what to delete:
 ```
 1) Open WebUI only  (accounts, chat history)
 2) Models only      (downloaded Ollama models)
-3) Everything       (WebUI + models)
+3) Qdrant only      (RAG vector index)
+4) Everything       (WebUI + models + Qdrant)
 ```
 
 > SearXNG has no persistent volume — its config lives in `searxng/settings.yml` and is not affected by reset.
+> Documents in `docs/` are not deleted by reset — only the Qdrant vectors are removed.
 
 ### Inspect volumes
 
@@ -193,19 +247,14 @@ Prompts you to choose what to delete:
 # List volumes
 docker volume ls
 
-# Browse Ollama model files
-docker exec -it ollama sh
-ls /root/.ollama/models
+# List installed models
+docker exec ollama ollama list
 
 # Browse Open WebUI data
 docker exec -it open-webui sh
-ls /app/backend/data
 
-# Inspect a volume without running containers
-docker run --rm -v locallm_ollama_data:/data alpine ls /data
-
-# List installed models
-docker exec ollama ollama list
+# Inspect Qdrant collections
+curl http://localhost:6333/collections
 ```
 
 ## Manual Commands
@@ -213,6 +262,9 @@ docker exec ollama ollama list
 ```bash
 # Follow logs
 docker compose logs -f
+
+# Follow logs for a specific service
+docker compose logs -f rag-api
 
 # Pull an additional model
 docker exec ollama ollama pull gemma3:12b

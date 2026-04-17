@@ -1,6 +1,33 @@
 services:
+  qdrant:
+    image: qdrant/qdrant:v1.17.1
+    container_name: qdrant
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT:-6333}:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  rag-api:
+    build: ./rag-api
+    container_name: rag-api
+    restart: unless-stopped
+    ports:
+      - "${RAG_API_PORT:-8000}:8000"
+    volumes:
+      - ./docs:/data/docs:ro
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - QDRANT_URL=http://qdrant:6333
+      - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-gemma3:4b}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-documents}
+    depends_on:
+      - ollama
+      - qdrant
+
   searxng:
-    image: searxng/searxng:latest
+    image: searxng/searxng:2026.4.16-ae0b0e56a
     container_name: searxng
     restart: unless-stopped
     ports:
@@ -11,7 +38,7 @@ services:
       - SEARXNG_BASE_URL=http://localhost:${SEARXNG_PORT:-8088}
 
   ollama:
-    image: ollama/ollama:latest
+    image: ollama/ollama:0.20.7
     container_name: ollama
     restart: unless-stopped
     ports:
@@ -20,7 +47,7 @@ services:
       - ollama_data:/root/.ollama
 
   open-webui:
-    image: ghcr.io/open-webui/open-webui:main
+    image: ghcr.io/open-webui/open-webui:v0.8.12
     container_name: open-webui
     restart: unless-stopped
     ports:
@@ -51,10 +78,16 @@ services:
 
       # Models
       - DEFAULT_MODELS=${DEFAULT_MODEL:-gemma3:4b}
+
+      # RAG API (OpenAI-compatible connection — auto-registers 'rag' model)
+      - OPENAI_API_BASE_URLS=http://rag-api:8000/v1
+      - OPENAI_API_KEYS=local
     depends_on:
       - ollama
       - searxng
+      - rag-api
 
 volumes:
   ollama_data:
   open_webui_data:
+  qdrant_data:
