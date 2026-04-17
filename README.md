@@ -111,7 +111,7 @@ Query your own documents using Retrieval-Augmented Generation.
 ```
 docs/*.pdf → ingest.py → nomic-embed-text → Qdrant (vectors)
 
-Question → RAG API → Qdrant (similarity search) → gemma3:4b → Answer
+Question → RAG API → Qdrant (similarity search, top-4) → gemma3:4b → Answer
 ```
 
 ### Index documents

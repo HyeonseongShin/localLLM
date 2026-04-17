@@ -25,17 +25,20 @@ EMBED_MODEL="${EMBED_MODEL:-nomic-embed-text}"
 OLLAMA_URL="${OLLAMA_URL:-http://localhost:${OLLAMA_PORT}}"
 WEBUI_URL="http://localhost:${WEBUI_PORT}"
 GPU=false
+BUILD=false
 
 # Parse arguments
 for arg in "$@"; do
   case $arg in
-    --gpu) GPU=true ;;
-    *) echo "Unknown option: $arg"; echo "Usage: ./start.sh [--gpu]"; exit 1 ;;
+    --gpu)   GPU=true ;;
+    --build) BUILD=true ;;
+    *) echo "Unknown option: $arg"; echo "Usage: ./start.sh [--gpu] [--build]"; exit 1 ;;
   esac
 done
 
 echo "=== Local LLM Start ==="
 echo "  GPU mode    : ${GPU}"
+echo "  Build       : ${BUILD}"
 echo "  LLM model   : ${DEFAULT_MODEL}"
 echo "  Embed model : ${EMBED_MODEL}"
 echo ""
@@ -49,9 +52,9 @@ fi
 # Start containers
 echo "[1/3] Starting containers..."
 if [ "${GPU}" = true ]; then
-  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d ${BUILD:+--build}
 else
-  docker compose up -d
+  docker compose up -d ${BUILD:+--build}
 fi
 
 # Wait for Ollama to be ready

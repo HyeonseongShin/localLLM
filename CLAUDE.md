@@ -120,7 +120,7 @@ Source lives in `rag-api/`. Built as a Docker image via `docker-compose.yml`.
 | File | Role |
 |------|------|
 | `rag-api/main.py` | FastAPI app — LangServe routes + `/v1/chat/completions` |
-| `rag-api/chain.py` | LCEL RAG chain (OllamaEmbeddings → Qdrant → ChatOllama) |
+| `rag-api/chain.py` | LCEL RAG chain (OllamaEmbeddings → Qdrant retriever → ChatOllama) |
 | `rag-api/ingest.py` | PDF ingestion script |
 | `rag-api/Dockerfile` | Container definition |
 | `rag-api/requirements.txt` | Python dependencies |
