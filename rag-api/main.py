@@ -67,7 +67,9 @@ async def list_models():
 @app.post("/v1/chat/completions")
 async def chat_completions(req: ChatRequest):
     question = req.messages[-1].content
+    t0 = time.perf_counter()
     answer = rag_chain.invoke(question)
+    logger.info("query_complete latency=%.2fs", time.perf_counter() - t0)
     return {
         "id": "chatcmpl-rag",
         "object": "chat.completion",

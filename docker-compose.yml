@@ -24,6 +24,15 @@ services:
       - EMBED_MODEL=${EMBED_MODEL:-nomic-embed-text}
       - DEFAULT_MODEL=${DEFAULT_MODEL:-gemma3:4b}
       - QDRANT_COLLECTION=${QDRANT_COLLECTION:-documents}
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-false}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY:-}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-localllm-rag}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v1/models"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
     depends_on:
       - ollama
       - qdrant
