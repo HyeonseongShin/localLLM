@@ -48,7 +48,10 @@ def get_rag_chain():
         collection_name=COLLECTION_NAME,
         embedding=embeddings,
     )
-    retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 4}).with_config(
+        run_name="qdrant-retriever",
+        tags=["retrieval"],
+    )
     llm = ChatOllama(model=LLM_MODEL, base_url=OLLAMA_BASE_URL)
 
     chain = (
@@ -61,4 +64,7 @@ def get_rag_chain():
         | StrOutputParser()
     )
     logger.info("RAG chain ready (llm=%s, embed=%s, collection=%s)", LLM_MODEL, EMBED_MODEL, COLLECTION_NAME)
-    return chain
+    return chain.with_config(
+        run_name="localllm-rag-chain",
+        tags=["rag", f"llm:{LLM_MODEL}", f"embed:{EMBED_MODEL}", f"collection:{COLLECTION_NAME}"],
+    )
