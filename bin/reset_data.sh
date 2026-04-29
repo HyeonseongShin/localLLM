@@ -29,9 +29,9 @@ case "${target}" in
   all)     echo "This will permanently delete Open WebUI data, downloaded models, and the Qdrant vector index." ;;
 esac
 echo ""
-read -r -p "Are you sure? (yes/N): " confirm
+read -r -p "Are you sure? (y/N): " confirm
 
-if [ "${confirm}" != "yes" ]; then
+if [ "${confirm}" != "y" ]; then
   echo "Cancelled."
   exit 0
 fi

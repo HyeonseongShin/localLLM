@@ -50,8 +50,22 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
+# Compute step counter
+STEP=0
+TOTAL_STEPS=$([ "${BUILD}" = true ] && echo 4 || echo 3)
+
+# Install host tools on --build
+if [ "${BUILD}" = true ]; then
+  STEP=$((STEP+1))
+  echo "[${STEP}/${TOTAL_STEPS}] Installing host tools..."
+  pip install oterm --upgrade --quiet
+  echo "      oterm: $(oterm --version 2>/dev/null || echo 'installed')"
+  echo ""
+fi
+
 # Start containers
-echo "[1/3] Starting containers..."
+STEP=$((STEP+1))
+echo "[${STEP}/${TOTAL_STEPS}] Starting containers..."
 if [ "${GPU}" = true ]; then
   docker compose -f "${PROJECT_ROOT}/docker-compose.yml" -f "${PROJECT_ROOT}/docker-compose.gpu.yml" up -d ${BUILD:+--build}
 else
@@ -59,13 +73,15 @@ else
 fi
 
 # Wait for Ollama to be ready
-echo "[2/3] Waiting for Ollama to be ready..."
+STEP=$((STEP+1))
+echo "[${STEP}/${TOTAL_STEPS}] Waiting for Ollama to be ready..."
 until curl -s "${OLLAMA_URL}" > /dev/null 2>&1; do
   sleep 2
 done
 
 # Check and download models
-echo "[3/3] Checking models..."
+STEP=$((STEP+1))
+echo "[${STEP}/${TOTAL_STEPS}] Checking models..."
 
 if docker exec ollama ollama list | grep -q "${DEFAULT_MODEL%:*}"; then
   echo "      ${DEFAULT_MODEL}: already installed."

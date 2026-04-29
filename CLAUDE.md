@@ -56,20 +56,20 @@ All settings live in `.env` (gitignored). Created automatically from `.env.examp
 
 | Variable | Default | Used by |
 |----------|---------|---------|
-| `OLLAMA_URL` | `http://localhost:11434` | `start.sh`, `ask.sh` |
+| `OLLAMA_URL` | `http://localhost:11434` | `start.sh`, `cli.sh` |
 | `OLLAMA_PORT` | `11434` | `docker-compose.yml`, `start.sh` |
 | `SEARXNG_PORT` | `8088` | `docker-compose.yml` |
 | `WEBUI_PORT` | `3000` | `docker-compose.yml`, `start.sh` |
 | `WEBUI_NAME` | `Local AI` | `docker-compose.yml` → Open WebUI |
 | `WEBUI_AUTH` | `true` | `docker-compose.yml` → Open WebUI |
 | `ENABLE_RAG_WEB_SEARCH` | `true` | `docker-compose.yml` → Open WebUI |
-| `DEFAULT_MODEL` | `gemma3:4b` | `start.sh`, `ask.sh`, `rag-api` |
+| `DEFAULT_MODEL` | `gemma3:4b` | `start.sh`, `rag-api` |
 | `EMBED_MODEL` | `nomic-embed-text` | `start.sh`, `rag-api` |
 | `QDRANT_PORT` | `6333` | `docker-compose.yml` |
 | `RAG_API_PORT` | `8000` | `docker-compose.yml` |
 | `QDRANT_COLLECTION` | `documents` | `rag-api` |
 
-`docker-compose.yml` reads `.env` automatically. `start.sh` and `ask.sh` source it explicitly before use.
+`docker-compose.yml` reads `.env` automatically. `start.sh` and `cli.sh` source it explicitly before use.
 
 ## Architecture
 
@@ -78,7 +78,7 @@ Browser → Open WebUI (3000) → Ollama API (11434) → Gemma3 model
                ↓ web search            ↑ RAG answers
           SearXNG (8088)        RAG API (8000)
                ↑                   ↓         ↓
-         ask.sh / ask.py       Qdrant (6333)  Ollama (11434)
+           cli.sh             Qdrant (6333)  Ollama (11434)
                                 vector search   LLM answer
 ```
 
@@ -88,7 +88,7 @@ Browser → Open WebUI (3000) → Ollama API (11434) → Gemma3 model
 - Open WebUI ↔ RAG API: internal Docker network via `http://rag-api:8000/v1` (OpenAI-compatible)
 - RAG API ↔ Qdrant: internal Docker network via `QDRANT_URL=http://qdrant:6333`
 - RAG API ↔ Ollama: internal Docker network via `OLLAMA_BASE_URL=http://ollama:11434`
-- `ask.sh` connects to Ollama from the host via `OLLAMA_URL` in `.env`
+- `cli.sh` connects to Ollama from the host via `OLLAMA_URL` in `.env` (mapped to `OLLAMA_HOST` for oterm)
 - GPU config is isolated in `docker-compose.gpu.yml`, merged only when `--gpu` is passed to `start.sh`
 
 ## Docker Image Versions
@@ -173,15 +173,12 @@ search:
 
 ## CLI Query Tool
 
-`ask.sh` sources `.env` then delegates to `bin/ask.py`.
+`cli.sh` sources `.env` and launches [oterm](https://github.com/ggozad/oterm), a TUI client for Ollama.
+Install oterm once via `./bin/start.sh --build`, then launch with:
 
 ```bash
-./bin/ask.sh -p "Question"
-./bin/ask.sh -m gemma3:12b -p "Question"        # Override model
-./bin/ask.sh -s "System prompt" -p "Question"   # System prompt
-./bin/ask.sh -f some_file.py -p "Question"      # Attach file as context
-cat file | ./bin/ask.sh -p "Question"           # Pipe as context
-./bin/ask.sh --no-stream -p "Question"          # No streaming
+./bin/cli.sh
 ```
 
-`ask.py` reads `OLLAMA_URL` and `DEFAULT_MODEL` from environment variables via `os.environ.get()`.
+Features: persistent multi-session chat (SQLite), MCP tool integration, model parameter tuning.
+oterm connects to the Ollama instance defined in `.env` (`OLLAMA_URL`).
