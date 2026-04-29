@@ -1,6 +1,5 @@
 services:
   ollama:
-    image: ollama/ollama:latest
     deploy:
       resources:
         reservations:
