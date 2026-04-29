@@ -1,6 +1,7 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 echo "=== Local LLM Data Reset ==="
 echo ""
@@ -37,7 +38,7 @@ fi
 
 echo ""
 echo "[1/2] Stopping containers..."
-docker compose --project-directory "${SCRIPT_DIR}" down
+docker compose --project-directory "${PROJECT_ROOT}" down
 
 echo "[2/2] Removing volumes..."
 case "${target}" in
@@ -56,4 +57,4 @@ case "${target}" in
 esac
 
 echo ""
-echo "Done. Run ./start.sh to restart."
+echo "Done. Run ./bin/start.sh to restart."

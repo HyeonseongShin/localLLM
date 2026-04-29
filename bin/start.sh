@@ -3,18 +3,19 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Create .env from .env.example if it doesn't exist
-if [ ! -f "${SCRIPT_DIR}/.env" ]; then
+if [ ! -f "${PROJECT_ROOT}/.env" ]; then
   echo "[INFO] .env not found. Creating from .env.example..."
-  cp "${SCRIPT_DIR}/.env.example" "${SCRIPT_DIR}/.env"
+  cp "${PROJECT_ROOT}/.env.example" "${PROJECT_ROOT}/.env"
   echo "       Created .env with default values. Edit it to customize."
   echo ""
 fi
 
 # Load config from .env
 set -o allexport
-source "${SCRIPT_DIR}/.env"
+source "${PROJECT_ROOT}/.env"
 set +o allexport
 
 # Apply defaults if not set in .env
@@ -32,7 +33,7 @@ for arg in "$@"; do
   case $arg in
     --gpu)   GPU=true ;;
     --build) BUILD=true ;;
-    *) echo "Unknown option: $arg"; echo "Usage: ./start.sh [--gpu] [--build]"; exit 1 ;;
+    *) echo "Unknown option: $arg"; echo "Usage: ./bin/start.sh [--gpu] [--build]"; exit 1 ;;
   esac
 done
 
@@ -52,9 +53,9 @@ fi
 # Start containers
 echo "[1/3] Starting containers..."
 if [ "${GPU}" = true ]; then
-  docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d ${BUILD:+--build}
+  docker compose -f "${PROJECT_ROOT}/docker-compose.yml" -f "${PROJECT_ROOT}/docker-compose.gpu.yml" up -d ${BUILD:+--build}
 else
-  docker compose up -d ${BUILD:+--build}
+  docker compose -f "${PROJECT_ROOT}/docker-compose.yml" up -d ${BUILD:+--build}
 fi
 
 # Wait for Ollama to be ready

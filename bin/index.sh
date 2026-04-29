@@ -3,12 +3,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOCS_DIR="${SCRIPT_DIR}/docs"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+DOCS_DIR="${PROJECT_ROOT}/rag-docs"
 
 # Load config from .env
-if [ -f "${SCRIPT_DIR}/.env" ]; then
+if [ -f "${PROJECT_ROOT}/.env" ]; then
   set -o allexport
-  source "${SCRIPT_DIR}/.env"
+  source "${PROJECT_ROOT}/.env"
   set +o allexport
 fi
 
@@ -18,7 +19,7 @@ echo ""
 
 # Check rag-api container is running
 if ! docker ps --format '{{.Names}}' | grep -q "^rag-api$"; then
-  echo "[ERROR] rag-api container is not running. Start it first with: ./start.sh"
+  echo "[ERROR] rag-api container is not running. Start it first with: ./bin/start.sh"
   exit 1
 fi
 

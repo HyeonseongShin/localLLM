@@ -11,13 +11,13 @@ services:
       - localllm
 
   rag-api:
-    build: ./rag-api
+    build: ./services/rag-api
     container_name: rag-api
     restart: unless-stopped
     ports:
       - "${RAG_API_PORT:-8000}:8000"
     volumes:
-      - ./docs:/data/docs:ro
+      - ./rag-docs:/data/docs:ro
     environment:
       - OLLAMA_BASE_URL=http://ollama:11434
       - QDRANT_URL=http://qdrant:6333
@@ -37,7 +37,7 @@ services:
     ports:
       - "${SEARXNG_PORT:-8088}:8080"
     volumes:
-      - ./searxng:/etc/searxng:rw
+      - ./services/searxng:/etc/searxng:rw
     environment:
       - SEARXNG_BASE_URL=http://localhost:${SEARXNG_PORT:-8088}
     networks:

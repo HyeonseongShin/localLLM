@@ -2,11 +2,12 @@
 
 # Rebuild Docker images for services that have local source code.
 # Run this whenever you change files under rag-api/.
-# After building, restart with: ./start.sh
+# After building, restart with: ./bin/start.sh
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 echo "=== Local LLM Build ==="
 echo ""
@@ -17,7 +18,7 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
-docker compose --project-directory "${SCRIPT_DIR}" build
+docker compose --project-directory "${PROJECT_ROOT}" build
 
 echo ""
-echo "Build complete. Run ./start.sh to start."
+echo "Build complete. Run ./bin/start.sh to start."

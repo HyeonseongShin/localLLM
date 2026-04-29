@@ -19,17 +19,17 @@ A local LLM environment built on Docker + Ollama + Gemma3 + Open WebUI + SearXNG
 
 ### Service Lifecycle
 ```bash
-./start.sh          # Start (CPU)
-./start.sh --gpu    # Start with NVIDIA GPU
-./stop.sh           # Stop containers (network preserved, fast restart)
-./stop.sh --down    # Remove containers and network (use after config changes)
-./reset_data.sh     # Interactively delete volume data
+./bin/start.sh          # Start (CPU)
+./bin/start.sh --gpu    # Start with NVIDIA GPU
+./bin/stop.sh           # Stop containers (network preserved, fast restart)
+./bin/stop.sh --down    # Remove containers and network (use after config changes)
+./bin/reset_data.sh     # Interactively delete volume data
 ```
 
 ### RAG Indexing
 ```bash
-# Place PDFs in docs/ then run
-./index.sh
+# Place PDFs in rag-docs/ then run
+./bin/index.sh
 
 # Index a single file
 docker exec rag-api python ingest.py /data/docs/document.pdf
@@ -115,15 +115,15 @@ Images are pinned to specific versions in `docker-compose.yml` to prevent unexpe
 
 ## RAG API
 
-Source lives in `rag-api/`. Built as a Docker image via `docker-compose.yml`.
+Source lives in `services/rag-api/`. Built as a Docker image via `docker-compose.yml`.
 
 | File | Role |
 |------|------|
-| `rag-api/main.py` | FastAPI app — LangServe routes + `/v1/chat/completions` |
-| `rag-api/chain.py` | LCEL RAG chain (OllamaEmbeddings → Qdrant retriever → ChatOllama) |
-| `rag-api/ingest.py` | PDF ingestion script |
-| `rag-api/Dockerfile` | Container definition |
-| `rag-api/requirements.txt` | Python dependencies |
+| `services/rag-api/main.py` | FastAPI app — LangServe routes + `/v1/chat/completions` |
+| `services/rag-api/chain.py` | LCEL RAG chain (OllamaEmbeddings → Qdrant retriever → ChatOllama) |
+| `services/rag-api/ingest.py` | PDF ingestion script |
+| `services/rag-api/Dockerfile` | Container definition |
+| `services/rag-api/requirements.txt` | Python dependencies |
 
 **LangServe endpoints** (auto-generated):
 - `POST /rag/invoke` — single invocation
@@ -147,19 +147,19 @@ The `rag` model appears in the Open WebUI model picker automatically — no manu
 
 ## RAG Document Indexing
 
-Place PDF files in `docs/` (gitignored, bind-mounted into `rag-api` at `/data/docs`).
+Place PDF files in `rag-docs/` (gitignored, bind-mounted into `rag-api` at `/data/docs`).
 
 ```bash
-cp ~/some_document.pdf docs/
-./index.sh
+cp ~/some_document.pdf rag-docs/
+./bin/index.sh
 ```
 
-`index.sh` iterates over all `*.pdf` files in `docs/` and runs `ingest.py` for each.
-The system works with an empty `docs/` — queries simply return "I don't know" until documents are indexed.
+`index.sh` iterates over all `*.pdf` files in `rag-docs/` and runs `ingest.py` for each.
+The system works with an empty `rag-docs/` — queries simply return "I don't know" until documents are indexed.
 
 ## SearXNG
 
-SearXNG config is a bind mount at `./searxng/settings.yml` (not a named Docker volume).
+SearXNG config is a bind mount at `./services/searxng/settings.yml` (not a named Docker volume).
 Key settings required for Open WebUI integration:
 
 ```yaml
@@ -173,15 +173,15 @@ search:
 
 ## CLI Query Tool
 
-`ask.sh` sources `.env` then delegates to `scripts/ask.py`.
+`ask.sh` sources `.env` then delegates to `bin/ask.py`.
 
 ```bash
-./ask.sh -p "Question"
-./ask.sh -m gemma3:12b -p "Question"        # Override model
-./ask.sh -s "System prompt" -p "Question"   # System prompt
-./ask.sh -f some_file.py -p "Question"      # Attach file as context
-cat file | ./ask.sh -p "Question"           # Pipe as context
-./ask.sh --no-stream -p "Question"          # No streaming
+./bin/ask.sh -p "Question"
+./bin/ask.sh -m gemma3:12b -p "Question"        # Override model
+./bin/ask.sh -s "System prompt" -p "Question"   # System prompt
+./bin/ask.sh -f some_file.py -p "Question"      # Attach file as context
+cat file | ./bin/ask.sh -p "Question"           # Pipe as context
+./bin/ask.sh --no-stream -p "Question"          # No streaming
 ```
 
 `ask.py` reads `OLLAMA_URL` and `DEFAULT_MODEL` from environment variables via `os.environ.get()`.

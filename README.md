@@ -35,13 +35,13 @@ All Docker images are pinned to specific versions to prevent unexpected breakage
 
 ```bash
 # CPU only
-./start.sh
+./bin/start.sh
 
 # With NVIDIA GPU
-./start.sh --gpu
+./bin/start.sh --gpu
 ```
 
-`start.sh` automatically:
+`bin/start.sh` automatically:
 1. Creates `.env` from `.env.example` if it does not exist
 2. Starts all Docker containers
 3. Waits for Ollama to be ready
@@ -51,8 +51,8 @@ All Docker images are pinned to specific versions to prevent unexpected breakage
 ### Stop
 
 ```bash
-./stop.sh           # Stop containers (network preserved, fast restart)
-./stop.sh --down    # Remove containers and network (use after config changes)
+./bin/stop.sh           # Stop containers (network preserved, fast restart)
+./bin/stop.sh --down    # Remove containers and network (use after config changes)
 ```
 
 ### Access
@@ -119,11 +119,11 @@ Question → RAG API → Qdrant (similarity search, top-4) → gemma3:4b → Ans
 Place PDF files in the `docs/` folder and run:
 
 ```bash
-cp ~/some_document.pdf docs/
-./index.sh
+cp ~/some_document.pdf rag-docs/
+./bin/index.sh
 ```
 
-`index.sh` indexes all `*.pdf` files in `docs/` at once. Already-indexed files can be re-run safely (documents are appended to the collection).
+`index.sh` indexes all `*.pdf` files in `rag-docs/` at once. Already-indexed files can be re-run safely (documents are appended to the collection).
 
 ### Use RAG in Open WebUI
 
@@ -143,7 +143,7 @@ The `rag` model is registered in Open WebUI **automatically at startup** — no 
 | `GET  /v1/models` | OpenAI-compatible model list |
 | `POST /v1/chat/completions` | OpenAI-compatible chat endpoint |
 
-> The system works with an empty `docs/` — it simply answers "I don't know" until documents are indexed.
+> The system works with an empty `rag-docs/` — it simply answers "I don't know" until documents are indexed.
 
 ## Web Search (SearXNG)
 
@@ -159,7 +159,7 @@ Open WebUI → searxng:8080 (internal Docker network) → external search engine
 
 Click the globe icon (🌐) in the chat input bar to toggle web search for that conversation.
 
-**SearXNG configuration** is stored in `searxng/settings.yml` (bind-mounted into the container). The file is version-controlled, so changes persist across `./stop.sh` / `./start.sh` cycles.
+**SearXNG configuration** is stored in `services/searxng/settings.yml` (bind-mounted into the container). The file is version-controlled, so changes persist across `./bin/stop.sh` / `./bin/start.sh` cycles.
 
 > For production use, replace `secret_key` in `searxng/settings.yml` with a random string:
 > ```bash
@@ -168,26 +168,26 @@ Click the globe icon (🌐) in the chat input bar to toggle web search for that 
 
 ## CLI Query Tool
 
-Query Ollama directly from the terminal with `ask.sh`.
+Query Ollama directly from the terminal with `bin/ask.sh`.
 
 ```bash
 # Basic question
-./ask.sh -p "Explain Docker volumes in one sentence"
+./bin/ask.sh -p "Explain Docker volumes in one sentence"
 
 # Choose a different model
-./ask.sh -m gemma3:12b -p "Write a Python quicksort"
+./bin/ask.sh -m gemma3:12b -p "Write a Python quicksort"
 
 # Set a system prompt
-./ask.sh -s "You are a Linux expert" -p "Best practice for secret management?"
+./bin/ask.sh -s "You are a Linux expert" -p "Best practice for secret management?"
 
 # Attach a file as context
-./ask.sh -f docker-compose.yml -p "What does this do?"
+./bin/ask.sh -f docker-compose.yml -p "What does this do?"
 
 # Pipe content as context
-cat error.log | ./ask.sh -p "What is wrong here?"
+cat error.log | ./bin/ask.sh -p "What is wrong here?"
 
 # Get the full response at once (no streaming)
-./ask.sh --no-stream -p "Give me a detailed explanation of DNS"
+./bin/ask.sh --no-stream -p "Give me a detailed explanation of DNS"
 ```
 
 | Option | Description |
@@ -200,12 +200,13 @@ cat error.log | ./ask.sh -p "What is wrong here?"
 
 ## Model Options
 
-| Model | RAM Required | Notes |
-|-------|-------------|-------|
-| `gemma3:2b` | 4 GB+ | Fast, good for simple conversations |
-| `gemma3:4b` | 8 GB+ | Balanced — default |
-| `gemma3:12b` | 16 GB+ | Higher quality |
-| `gemma3:27b` | 32 GB+ | Best quality |
+| Model | Role | RAM Required | Notes |
+|-------|------|-------------|-------|
+| `gemma3:2b` | Chat / answer generation | 4 GB+ | Fast, good for simple conversations |
+| `gemma3:4b` | Chat / answer generation | 8 GB+ | Balanced — default |
+| `gemma3:12b` | Chat / answer generation | 16 GB+ | Higher quality |
+| `gemma3:27b` | Chat / answer generation | 32 GB+ | Best quality |
+| `nomic-embed-text` | Text embedding for RAG | ~300 MB | Embedding-only — do not select as a chat model |
 
 To change the default model, update `DEFAULT_MODEL` in `.env`.
 
@@ -229,7 +230,7 @@ Open WebUI supports side-by-side comparison. In a chat, click the model name at 
 ### Reset data
 
 ```bash
-./reset_data.sh
+./bin/reset_data.sh
 ```
 
 Prompts you to choose what to delete:
@@ -281,7 +282,7 @@ docker exec -it ollama ollama run gemma3:4b
 Install [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) on the host, then pass the `--gpu` flag at startup:
 
 ```bash
-./start.sh --gpu
+./bin/start.sh --gpu
 ```
 
 GPU settings are defined in `docker-compose.gpu.yml` and merged at runtime only when `--gpu` is specified.
